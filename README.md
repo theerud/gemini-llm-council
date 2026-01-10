@@ -41,3 +41,7 @@ The Council can review files or research topics if you ask the Chairman to do so
 *   **Drafting Phase**: Selected models provide independent answers.
 *   **Peer Review Phase**: Models critique each other's anonymized answers.
 *   **Synthesis**: The Gemini CLI Agent synthesizes the drafts and reviews into a final consensus answer.
+
+## Inspiration
+
+This project was inspired by Andrej Karpathy's [LLM council](https://github.com/karpathy/llm-council) project, as shared in his [Twitter (X) post](https://x.com/karpathy/status/1992381094667411768).
