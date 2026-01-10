@@ -6,7 +6,7 @@
   "mcpServers": {
     "council": {
       "command": "node",
-      "args": ["dist/index.js"],
+      "args": ["${extensionPath}/dist/index.js"],
       "env": {
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
       }
