@@ -1,0 +1,10 @@
+description = "Show the current LLM Council status and configuration"
+prompt = """
+1.  **Retrieve Status**: Call the `council/get_council_status` tool.
+2.  **Display Information**: Once you have the status, present it clearly:
+    *   **Configuration File**: Absolute path to the config.
+    *   **Status**: Does the file exist?
+    *   **Council Members**: List the model IDs currently active.
+
+If no council is configured, strongly recommend running `/council:setup`.
+"""
