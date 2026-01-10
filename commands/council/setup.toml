@@ -1,17 +1,16 @@
 description = "Configure the LLM Council members"
 prompt = """
 You are managing the setup for the LLM Council.
-Your goal is to help the user configure their default council members.
+Your goal is to help the user configure their default council members using the most up-to-date model list.
 
-1.  **Group Models**: Organize the available models into 3-4 logical questions.
-2.  **Present UI**: Call `ask_user_question` ONCE with all questions included in the `questions` array.
+1.  **Get Models**: First, call the `list_available_models` tool to get the current list of supported model IDs and names.
+2.  **Group & Present**: 
+    *   Take the list of models and group them into logical questions (max 4 options per question).
+    *   Call `ask_user_question` with these grouped questions.
     *   Set `multiSelect` to `true` for all questions.
-    *   Group 1: OpenAI & Anthropic (GPT-5.2, GPT-5.1, Claude 4.5 Opus/Sonnet)
-    *   Group 2: Google & DeepSeek (Gemini 3 Pro/Flash, DeepSeek V3.2/Speciale)
-    *   Group 3: Regional Experts (GLM-4.7, Minimax M2.1, Kimi K2 Thinking)
 3.  **Validate**: 
-    *   If the user selects **more than 5 models**, warn them about high latency and OpenRouter costs. 
-    *   Ask if they are sure or if they want to re-run the setup to select fewer models.
-4.  **Save**: If confirmed (or if selections <= 5), call `save_council_config` with the combined list of model IDs.
-5.  **Confirm**: Tell the user the configuration has been saved.
+    *   If the user selects **more than 5 models**, warn them: "Having more than 5 members may lead to significant latency and higher OpenRouter credit consumption."
+    *   Ask if they want to proceed or re-select.
+4.  **Save**: Call `save_council_config` with the final list of selected model IDs.
+5.  **Confirm**: Confirm the configuration has been saved.
 """

@@ -3,8 +3,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import axios from "axios";
 import * as dotenv from "dotenv";
-import { getCouncilConfig, saveCouncilConfig } from "./config.js";
-import { DRAFTING_PROMPT, REVIEW_PROMPT } from "./prompts.js";
+import { AVAILABLE_MODELS, getCouncilConfig, saveCouncilConfig } from "./config.js";
+import { DRAFTING_PROMPT, REVIEW_PROMPT, SYNTHESIS_PROMPT } from "./prompts.js";
 
 dotenv.config();
 
@@ -44,6 +44,16 @@ async function callLLM(model: string, messages: any[]) {
     return `[Error calling ${model}: ${error.message}]`;
   }
 }
+
+server.tool(
+  "list_available_models",
+  {},
+  async () => {
+    return {
+      content: [{ type: "text", text: JSON.stringify(AVAILABLE_MODELS, null, 2) }],
+    };
+  }
+);
 
 server.tool(
   "consult_council",
@@ -102,6 +112,7 @@ ${draft.answer}\n\n`;
     const output = {
       drafts,
       reviews,
+      synthesis_instructions: SYNTHESIS_PROMPT,
     };
 
     return {

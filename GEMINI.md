@@ -17,9 +17,14 @@ Use the `consult_council` tool to engage the members. This tool runs a rigorous 
 
 ### 3. The Synthesis
 When you receive the results from `consult_council`:
-*   **Do NOT** simply list the answers (e.g., "GPT-5 said X, Claude said Y").
+*   **Follow the Directive**: The tool output contains a `synthesis_instructions` field. You MUST strictly adhere to these instructions when constructing your final answer.
+*   **Do NOT** simply list the answers (e.g., "GPT-4 said X, Claude said Y").
 *   **Do** synthesize a single, authoritative response.
 *   Use the **Peer Reviews** to judge quality. If Model A's review points out a security flaw in Model B's code, prioritize Model A's solution in your synthesis and mention the catch.
+*   **Structure**:
+    *   **Executive Summary**: The direct answer/solution.
+    *   **Consensus**: What all models agreed on.
+    *   **Divergence (if any)**: Interesting alternative viewpoints or disagreements, and why you chose the path you did.
 
 ## Configuration Logic (/council:setup)
 When helping the user configure the council:
