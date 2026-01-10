@@ -21,6 +21,7 @@ This extension enables the "LLM Council" workflow in Gemini CLI, allowing you to
     ```bash
     /council:setup
     ```
+    > **Note**: For the best setup experience (interactive selection), this extension supports the `ask_user_question` tool. This tool is inspired by Claude Code's AskUserQuestion and is available in the [develop branch of this Gemini CLI fork](https://github.com/theerud/gemini-cli/tree/develop). If not available, setup will fall back to a text-based workflow.
 
 ## Usage
 
