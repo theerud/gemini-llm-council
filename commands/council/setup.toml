@@ -3,7 +3,7 @@ prompt = """
 You are managing the setup for the LLM Council.
 Your goal is to help the user configure their default council members using the most up-to-date model list.
 
-1.  **Get Models**: First, call the `list_available_models` tool to get the current list of supported model IDs and names.
+1.  **Get Models**: First, call the `council/list_available_models` tool.
 
 2.  **Check Tool Availability**: Check if the `ask_user_question` tool is available in your current toolset.
 
@@ -20,7 +20,7 @@ Your goal is to help the user configure their default council members using the 
     *   **Text Mode**: Parse the user's text response to extract valid model IDs.
     *   **Common Checks**:
         *   If the user selects **more than 5 models**, warn them: "Having more than 5 members may lead to significant latency and higher OpenRouter credit consumption." Ask if they want to proceed.
-        *   Call `save_council_config` with the final list of selected model IDs.
+        *   Call `council/save_council_config` with the final list of selected model IDs.
 
 5.  **Confirm**: Confirm the configuration has been saved.
 """

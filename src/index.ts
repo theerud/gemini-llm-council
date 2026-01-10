@@ -3,7 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import axios from "axios";
 import * as dotenv from "dotenv";
-import { AVAILABLE_MODELS, getCouncilConfig, saveCouncilConfig } from "./config.js";
+import { AVAILABLE_MODELS, getCouncilConfig, getCouncilStatus, saveCouncilConfig } from "./config.js";
 import { DRAFTING_PROMPT, REVIEW_PROMPT, SYNTHESIS_PROMPT } from "./prompts.js";
 
 dotenv.config();
@@ -40,13 +40,28 @@ async function callLLM(model: string, messages: any[]) {
     const data = response.data as any;
     return data.choices[0].message.content;
   } catch (error: any) {
-    console.error(`Error calling model ${model}:`, error.response?.data || error.message);
-    return `[Error calling ${model}: ${error.message}]`;
+    let errorMessage = error.message;
+    if ((axios as any).isAxiosError?.(error) || error.isAxiosError) {
+      if (error.response) {
+        const status = error.response.status;
+        if (status === 401) {
+          errorMessage = "401 Unauthorized (Invalid API Key)";
+        } else if (status === 402) {
+          errorMessage = "402 Payment Required (Insufficient Credits)";
+        } else if (status === 429) {
+          errorMessage = "429 Too Many Requests (Rate Limit Exceeded)";
+        } else {
+          errorMessage = `${status} ${error.response.statusText}`;
+        }
+      }
+    }
+    return `[Error calling ${model}: ${errorMessage}]`;
   }
 }
 
 server.tool(
   "list_available_models",
+  "List all available model IDs and names supported by the council via OpenRouter.",
   {},
   async () => {
     return {
@@ -57,22 +72,40 @@ server.tool(
 
 server.tool(
   "consult_council",
+  "Engage the LLM Council to answer a query using the 2-phase Drafting and Peer Review process.",
   {
     query: z.string().describe("The user's query to the council."),
     context: z.string().optional().describe("Additional context (file contents, search results) gathered by the Chairman."),
     models: z.array(z.string()).optional().describe("Specific models to consult. If omitted, uses defaults."),
   },
   async ({ query, context, models }) => {
+    // 1. Check API Key
+    if (!OPENROUTER_API_KEY) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({
+          error: "MISSING_KEY",
+          message: "OpenRouter API Key is missing. Please check your .env file."
+        }) }],
+        isError: true,
+      };
+    }
+
     let selectedModels = models;
 
+    // 2. Resolve Config
     if (!selectedModels || selectedModels.length === 0) {
       const config = await getCouncilConfig();
       selectedModels = config.default_models;
     }
 
+    // 3. Strict No-Config Error
     if (!selectedModels || selectedModels.length === 0) {
       return {
-        content: [{ type: "text", text: "No council members selected. Please run /council:setup or provide models." }],
+        content: [{ type: "text", text: JSON.stringify({
+          error: "NO_CONFIG",
+          message: "Council members are not configured. Please run /council:setup."
+        }) }],
+        isError: true,
       };
     }
 
@@ -92,8 +125,7 @@ server.tool(
     // Prepare Review Packet (Anonymized)
     let reviewPacket = "Here are the answers from other council members:\n\n";
     drafts.forEach((draft, index) => {
-      reviewPacket += `--- Answer ${index + 1} ---
-${draft.answer}\n\n`;
+      reviewPacket += `--- Answer ${index + 1} ---\n${draft.answer}\n\n`;
     });
 
     // Phase 2: Peer Review
@@ -123,6 +155,7 @@ ${draft.answer}\n\n`;
 
 server.tool(
   "save_council_config",
+  "Save the default list of model IDs for the council to a configuration file.",
   {
     models: z.array(z.string()).describe("The list of models to save as defaults."),
   },
@@ -139,7 +172,20 @@ server.tool(
 );
 
 server.tool(
+  "get_council_status",
+  "Get the current council configuration status, including active models and the file path of the config file.",
+  {},
+  async () => {
+    const status = await getCouncilStatus();
+    return {
+      content: [{ type: "text", text: JSON.stringify(status) }],
+    };
+  }
+);
+
+server.tool(
   "get_council_config",
+  "Get the current council configuration (list of active models).",
   {},
   async () => {
     const config = await getCouncilConfig();

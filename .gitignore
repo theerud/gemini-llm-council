@@ -28,4 +28,5 @@ yarn-error.log*
 
 # Project specific
 council.config.json
+.gemini/llm-council.json
 tmp/

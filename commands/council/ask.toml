@@ -10,7 +10,7 @@ The user is asking a question or requesting a task.
     *   If the user says "Research React patterns", you **MUST** call `web_fetch` or `google_web_search` **FIRST**.
     *   Do NOT call the council until you have this context in your conversation history.
 3.  **Consult**:
-    *   Call the `consult_council` tool.
+    *   Call the `council/consult_council` tool.
     *   Pass the user's original query.
     *   Pass the gathered context (file contents, search summaries) into the `context` parameter.
 4.  **Synthesize**:
