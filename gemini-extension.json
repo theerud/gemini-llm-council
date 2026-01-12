@@ -6,7 +6,7 @@
   "settings": [
     {
       "name": "OpenRouter API Key",
-      "description": "Your OpenRouter API key (sk-or-...). Get one at https://openrouter.ai/keys",
+      "description": "Your OpenRouter API key. Get one at https://openrouter.ai/keys\n(sk-or-v1-...)",
       "envVar": "OPENROUTER_API_KEY",
       "sensitive": true
     }
