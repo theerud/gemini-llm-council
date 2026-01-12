@@ -11,6 +11,18 @@ dotenv.config();
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
+interface LLMResponse {
+  content: string;
+  reasoning?: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+    cache_discount?: number;
+  };
+  error?: string;
+}
+
 if (!OPENROUTER_API_KEY) {
   console.warn("Warning: OPENROUTER_API_KEY is not set in .env file.");
 }
@@ -20,14 +32,34 @@ const server = new McpServer({
   version: "0.1.0",
 });
 
-async function callLLM(model: string, messages: any[]) {
+async function callLLM(model: string, messages: any[], reasoningEffort: string = "none"): Promise<LLMResponse> {
   try {
+    const isAnthropic = model.startsWith("anthropic/");
+    
+    // Inject cache_control for Anthropic if messages are large
+    const processedMessages = messages.map((msg, idx) => {
+      if (isAnthropic && msg.content && msg.content.length > 2000 && idx < messages.length - 1) {
+        return {
+          ...msg,
+          cache_control: { type: "ephemeral" }
+        };
+      }
+      return msg;
+    });
+
+    const payload: any = {
+      model: model,
+      messages: processedMessages,
+      include_usage: true,
+    };
+
+    if (reasoningEffort !== "none") {
+      payload.reasoning = { effort: reasoningEffort };
+    }
+
     const response = await axios.post(
       OPENROUTER_URL,
-      {
-        model: model,
-        messages: messages,
-      },
+      payload,
       {
         headers: {
           "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
@@ -37,25 +69,50 @@ async function callLLM(model: string, messages: any[]) {
         },
       }
     );
+    
     const data = response.data as any;
-    return data.choices[0].message.content;
+    const choice = data.choices[0];
+    const message = choice.message;
+    
+    // Handle reasoning
+    let reasoning = "";
+    if (message.reasoning) {
+      reasoning = message.reasoning;
+    } else if (message.reasoning_details) {
+      // Some models return reasoning_details array
+      reasoning = Array.isArray(message.reasoning_details) 
+        ? message.reasoning_details.map((d: any) => d.text || "").join("\n")
+        : JSON.stringify(message.reasoning_details);
+    }
+
+    return {
+      content: message.content || "",
+      reasoning: reasoning || undefined,
+      usage: data.usage,
+    };
   } catch (error: any) {
     let errorMessage = error.message;
     if ((axios as any).isAxiosError?.(error) || error.isAxiosError) {
       if (error.response) {
         const status = error.response.status;
+        const body = error.response.data;
         if (status === 401) {
           errorMessage = "401 Unauthorized (Invalid API Key)";
         } else if (status === 402) {
           errorMessage = "402 Payment Required (Insufficient Credits)";
         } else if (status === 429) {
           errorMessage = "429 Too Many Requests (Rate Limit Exceeded)";
+        } else if (body && body.error && body.error.message) {
+          errorMessage = body.error.message;
         } else {
           errorMessage = `${status} ${error.response.statusText}`;
         }
       }
     }
-    return `[Error calling ${model}: ${errorMessage}]`;
+    return {
+      content: "",
+      error: errorMessage,
+    };
   }
 }
 
@@ -77,8 +134,9 @@ server.tool(
     query: z.string().describe("The user's query to the council."),
     context: z.string().optional().describe("Additional context (file contents, search results) gathered by the Chairman."),
     models: z.array(z.string()).optional().describe("Specific models to consult. If omitted, uses defaults."),
+    reasoning_effort: z.enum(["none", "low", "medium", "high"]).optional().describe("The effort level for reasoning (thinking tokens)."),
   },
-  async ({ query, context, models }) => {
+  async ({ query, context, models, reasoning_effort }) => {
     // 1. Check API Key
     if (!OPENROUTER_API_KEY) {
       return {
@@ -91,11 +149,15 @@ server.tool(
     }
 
     let selectedModels = models;
+    let effort = reasoning_effort;
 
     // 2. Resolve Config
+    const config = await getCouncilConfig();
     if (!selectedModels || selectedModels.length === 0) {
-      const config = await getCouncilConfig();
       selectedModels = config.default_models;
+    }
+    if (!effort) {
+      effort = config.default_reasoning_effort || "none";
     }
 
     // 3. Strict No-Config Error
@@ -110,14 +172,15 @@ server.tool(
     }
 
     // Phase 1: Drafting
+    // Place context at the beginning to stabilize prefix for caching
     const draftingMessages = [
       { role: "system", content: DRAFTING_PROMPT },
-      { role: "user", content: `Query: ${query}\n\nContext:\n${context || "None"}` },
+      { role: "user", content: `Context:\n${context || "None"}\n\nQuery: ${query}` },
     ];
 
     const draftPromises = selectedModels.map(async (model) => {
-      const answer = await callLLM(model, draftingMessages);
-      return { model, answer };
+      const response = await callLLM(model, draftingMessages, effort);
+      return { model, ...response };
     });
 
     const drafts = await Promise.all(draftPromises);
@@ -125,17 +188,17 @@ server.tool(
     // Prepare Review Packet (Anonymized)
     let reviewPacket = "Here are the answers from other council members:\n\n";
     drafts.forEach((draft, index) => {
-      reviewPacket += `--- Answer ${index + 1} ---\n${draft.answer}\n\n`;
+      reviewPacket += `--- Answer ${index + 1} ---\n${draft.content || "[Error: " + draft.error + "]"}\n\n`;
     });
 
     // Phase 2: Peer Review
     const reviewPromises = selectedModels.map(async (model) => {
       const reviewMessages = [
         { role: "system", content: REVIEW_PROMPT },
-        { role: "user", content: `Query: ${query}\n\n${reviewPacket}` },
+        { role: "user", content: `Context:\n${context || "None"}\n\nQuery: ${query}\n\n${reviewPacket}` },
       ];
-      const critique = await callLLM(model, reviewMessages);
-      return { model, critique };
+      const response = await callLLM(model, reviewMessages, effort);
+      return { model, ...response };
     });
 
     const reviews = await Promise.all(reviewPromises);
@@ -145,6 +208,11 @@ server.tool(
       drafts,
       reviews,
       synthesis_instructions: SYNTHESIS_PROMPT,
+      total_usage: {
+        prompt_tokens: [...drafts, ...reviews].reduce((acc, r) => acc + (r.usage?.prompt_tokens || 0), 0),
+        completion_tokens: [...drafts, ...reviews].reduce((acc, r) => acc + (r.usage?.completion_tokens || 0), 0),
+        total_tokens: [...drafts, ...reviews].reduce((acc, r) => acc + (r.usage?.total_tokens || 0), 0),
+      }
     };
 
     return {
@@ -158,10 +226,11 @@ server.tool(
   "Save the default list of model IDs for the council to a configuration file.",
   {
     models: z.array(z.string()).describe("The list of models to save as defaults."),
+    reasoning_effort: z.enum(["none", "low", "medium", "high"]).optional().describe("The default effort level for reasoning."),
   },
-  async ({ models }) => {
-    await saveCouncilConfig(models);
-    let message = `Configuration saved. Default models: ${models.join(", ")}`;
+  async ({ models, reasoning_effort }) => {
+    await saveCouncilConfig(models, reasoning_effort);
+    let message = `Configuration saved. Default models: ${models.join(", ")}. Default reasoning: ${reasoning_effort || "none"}`;
     if (models.length > 5) {
       message += "\n\nWarning: You have selected more than 5 models. This may result in higher latency and increased API costs.";
     }

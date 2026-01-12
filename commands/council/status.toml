@@ -5,6 +5,7 @@ prompt = """
     *   **Configuration File**: Absolute path to the config.
     *   **Status**: Does the file exist?
     *   **Council Members**: List the model IDs currently active.
+    *   **Reasoning Effort**: Current default thinking depth (none, low, medium, high).
 
 If no council is configured, strongly recommend running `/council:setup`.
 """

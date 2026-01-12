@@ -11,10 +11,12 @@ The user is asking a question or requesting a task.
     *   Do NOT call the council until you have this context in your conversation history.
 3.  **Consult**:
     *   Call the `council/consult_council` tool.
-    *   Pass the user's original query.
-    *   Pass the gathered context (file contents, search summaries) into the `context` parameter.
+    *   Pass the user's original query and gathered context.
+    *   The tool now returns `drafts` and `reviews` containing `content`, `reasoning`, and `usage`.
+
 4.  **Synthesize**:
-    *   The tool will return a set of **Draft Answers** and **Peer Reviews**.
-    *   Read the reviews to identify which drafts are most accurate and insightful.
-    *   Formulate a final response that represents the best consensus of the council, highlighting any valid critiques or alternative viewpoints raised during the review.
+    *   Analyze the `reasoning` fields to understand the underlying logic of each member.
+    *   Follow the `synthesis_instructions` to create the final response.
+    *   **Transparency**: Briefly mention the council's "thinking" depth if reasoning was utilized. 
+    *   **Efficiency**: If you notice significant caching or high efficiency in the `total_usage` data, you can optionally include a small note about the performance/cost savings (e.g., "This request benefited from prompt caching").
 """

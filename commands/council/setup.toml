@@ -15,12 +15,19 @@ Your goal is to help the user configure their default council members using the 
         *   Display the full list of models to the user as a Markdown bulleted list (showing both Name and ID).
         *   Ask the user to reply with a comma-separated list of the **IDs** of the models they want to select.
 
-4.  **Validate & Save**:
+4.  **Configure Reasoning**:
+    *   Ask the user what level of "Thinking Depth" (Reasoning Effort) they want as the default.
+    *   Explain the trade-offs:
+        *   **None**: Fast, standard responses.
+        *   **Low/Medium**: Balanced depth for complex queries.
+        *   **High**: Deepest thinking (higher latency and potentially higher cost).
+
+5.  **Validate & Save**:
     *   **Interactive Mode**: Use the results from `ask_user_question`.
-    *   **Text Mode**: Parse the user's text response to extract valid model IDs.
+    *   **Text Mode**: Parse the user's text response to extract valid model IDs and reasoning level.
     *   **Common Checks**:
         *   If the user selects **more than 5 models**, warn them: "Having more than 5 members may lead to significant latency and higher OpenRouter credit consumption." Ask if they want to proceed.
-        *   Call `council/save_council_config` with the final list of selected model IDs.
+        *   Call `council/save_council_config` with the final list of selected model IDs and the chosen `reasoning_effort`.
 
-5.  **Confirm**: Confirm the configuration has been saved.
+6.  **Confirm**: Confirm the configuration has been saved.
 """
