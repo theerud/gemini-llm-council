@@ -17,10 +17,10 @@ Inspired by Andrej Karpathy's [llm-council](https://github.com/karpathy/llm-coun
     ```
 
 2.  **Configure API Key**:
-    Copy `.env.example` to `.env` and add your OpenRouter API key.
+    Use the Gemini CLI to set your OpenRouter API key securely. 
+    *(Note: This requires Gemini CLI v0.24.0-preview or later)*
     ```bash
-    cp .env.example .env
-    # Edit .env and add OPENROUTER_API_KEY=sk-or-...
+    gemini extensions config gemini-llm-council "OpenRouter API Key"
     ```
 
 3.  **Build the extension**:

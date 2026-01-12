@@ -3,6 +3,14 @@
   "description": "Gemini CLI Extension to work with multiple LLMs at once",
   "version": "0.1.0",
   "contextFileName": "GEMINI.md",
+  "settings": [
+    {
+      "name": "OpenRouter API Key",
+      "description": "Your OpenRouter API key (sk-or-...). Get one at https://openrouter.ai/keys",
+      "envVar": "OPENROUTER_API_KEY",
+      "sensitive": true
+    }
+  ],
   "mcpServers": {
     "council": {
       "command": "node",
