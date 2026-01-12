@@ -23,6 +23,20 @@ Inspired by Andrej Karpathy's [llm-council](https://github.com/karpathy/llm-coun
     gemini extensions config gemini-llm-council "OpenRouter API Key"
     ```
 
+    **Headless / CI Environments**: If the system keychain is unavailable, you can set the API key directly in your shell. 
+    
+    > [!CAUTION]
+    > **Security Warning**: Using the `GEMINI_CLI_` prefix whitelists the variable from redaction.
+    > 1. **Leakage**: Secrets will appear in plaintext in logs (`~/.gemini/logs/`) and error traces.
+    > 2. **Lack of Isolation**: These variables are global and visible to *all* installed Gemini extensions.
+    > 3. **Display**: These secrets may be displayed in plaintext during verbose output or screen sharing.
+    > 
+    > Only use this for ephemeral, headless environments (like CI/CD). For local development, always prefer the keychain-backed method.
+
+    ```bash
+    export GEMINI_CLI_OPENROUTER_API_KEY=sk-or-...
+    ```
+
 3.  **Build the extension**:
     ```bash
     npm install
