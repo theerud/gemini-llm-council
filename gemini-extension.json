@@ -7,7 +7,6 @@
     "council": {
       "command": "node",
       "args": ["${extensionPath}/dist/index.js"],
-      "cwd": "${workspaceFolder}",
       "env": {
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
       }
