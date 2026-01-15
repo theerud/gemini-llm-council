@@ -20,7 +20,7 @@ export interface CouncilStatus {
 
 export const AVAILABLE_MODELS = [
   { id: 'openai/gpt-5.2', name: 'GPT-5.2', features: { reasoning: true, caching: true } },
-  { id: 'openai/gpt-5.1-codex-max', name: 'GPT-5.1-Codex-Max', features: { caching: true } },
+  { id: 'openai/gpt-5.2-codex', name: 'GPT-5.2-Codex', features: { caching: true } },
   { id: 'anthropic/claude-opus-4.5', name: 'Claude Opus 4.5', features: { reasoning: true, caching: true } },
   { id: 'anthropic/claude-sonnet-4.5', name: 'Claude Sonnet 4.5', features: { reasoning: true, caching: true } },
   { id: 'google/gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', features: { caching: true } },
